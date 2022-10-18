@@ -1,17 +1,25 @@
 #include <ESP8266WiFi.h>
 
 #include <PubSubClient.h>
+
 int closeAll = 1000;
 const int openAll = 999;
 const int closeNum = 100;
+const int normal = 1001;
+const int horse = 1002;
+const int twinkle = 1003;
+int lightMode = normal;
+const int switchModeKey = 1001;
+
 const int LED1 = 16;
 const int LED2 = 5;
 const int LED3 = 14;
 const int LED4 = 0;
 const int LED5 = 2;
 const int LED6 = 4;
-const int lightsLenght = 6;
-const int lights[lightsLenght] = { LED1, LED2, LED3, LED4, LED5, LED6 };
+
+const int lightsLength = 6;
+const int lights[lightsLength] = { LED1, LED2, LED3, LED4, LED5, LED6 };
 
 const char* ssid = "MI_Chester";            //连接的路由器的名字
 const char* password = "abcd35873";         //连接的路由器的密码
@@ -60,15 +68,38 @@ void callback(char* topic, byte* payload, unsigned int length) {  //用于接收
     p *= 10;
   }
 
-  Serial.print("\nreceived -> ");
+  Serial.println("received -> ");
   Serial.println(l);
   controlLights(l);
+  if(l==switchModeKey){
+    switchchOverMode();
+  }
+  
+}
+
+void switchchOverMode() {
+   Serial.println("switch mode ...");
+  if (lightMode == normal) {
+    Serial.println("normal -> horse");
+    lightMode = horse;
+    return;
+  }
+  if (lightMode == horse) {
+    Serial.println("horse -> twinkle");
+    lightMode = twinkle;
+    return;
+  }
+  if (lightMode == twinkle) {
+    Serial.println("twinkle -> normal");
+    lightMode = normal;
+    closeAllLight();
+    return;
+  }
 }
 
 void controlLights(int l) {
 
-
-  for (int i = 0; i < lightsLenght; i++) {
+  for (int i = 0; i < lightsLength; i++) {
 
     if (l == lights[i]) {
       Serial.print("open gpio");
@@ -85,7 +116,7 @@ void controlLights(int l) {
     }
   }
   if (l == closeAll) {
-     Serial.print("close all gpio lights");
+    Serial.print("close all gpio lights");
     closeAllLight();
   }
   if (l == openAll) {
@@ -95,12 +126,12 @@ void controlLights(int l) {
 }
 
 void closeAllLight() {
-  for (int i = 0; i < lightsLenght; i++) {
+  for (int i = 0; i < lightsLength; i++) {
     digitalWrite(lights[i], HIGH);
   }
 }
 void openAllLight() {
-  for (int i = 0; i < lightsLenght; i++) {
+  for (int i = 0; i < lightsLength; i++) {
     digitalWrite(lights[i], LOW);
   }
 }
@@ -135,10 +166,28 @@ void reconnect() {  //等待，直到连接上服务器
 }
 
 void setupLight() {
-  for (int i = 0; i < lightsLenght; i++) {
+  for (int i = 0; i < lightsLength; i++) {
     pinMode(lights[i], OUTPUT);
     digitalWrite(lights[i], HIGH);
   }
+}
+
+void ledHorseLoop() {
+  closeAllLight();
+  digitalWrite(lights[0], LOW);
+  delay(500);
+  for (int i = 1; i < lightsLength; i++) {
+    digitalWrite(lights[i - 1], HIGH);
+    digitalWrite(lights[i], LOW);
+    delay(500);
+  }
+}
+
+void ledTwinkleLoop() {
+  delay(500);
+  closeAllLight();
+  delay(500);
+  openAllLight();
 }
 
 void setup() {  //初始化程序，只运行一遍
@@ -154,8 +203,12 @@ void setup() {  //初始化程序，只运行一遍
 }
 
 void loop() {  //主循环
-
-  reconnect();  //确保连上服务器，否则一直等待。
-
-  client.loop();  //MUC接收数据的主循环函数。
+    reconnect();    //确保连上服务器，否则一直等待。
+    client.loop();  //MUC接收数据的主循环函数。
+  if (lightMode == horse) {
+    ledHorseLoop();
+  }
+  if (lightMode == twinkle) {
+    ledTwinkleLoop();
+  }
 }
