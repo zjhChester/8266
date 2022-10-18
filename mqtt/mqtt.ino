@@ -24,8 +24,12 @@ const int lights[lightsLength] = { LED1, LED2, LED3, LED4, LED5, LED6 };
 const char* ssid = "MI_Chester";            //连接的路由器的名字
 const char* password = "abcd35873";         //连接的路由器的密码
 const char* mqtt_server = "192.168.2.192";  //服务器的地址
-const int port = 1883;                      //服务器端口号
+const int port = 1883;              
+
 const char* TOPIC = "/led/light";
+const char* mqtt_id ="jiahao_first_8266";
+const char* mqtt_username ="zjh";
+const char* mqtt_password ="Jjhjjh35873@";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -148,7 +152,7 @@ void reconnect() {  //等待，直到连接上服务器
 
     delay(500);
 
-    if (client.connect("jiahao_first_8266", "zjh", "Jjhjjh35873@")) {  //接入时的用户名，尽量取一个很不常用的用户名
+    if (client.connect(mqtt_id, mqtt_username, mqtt_password)) {  //接入时的用户名，尽量取一个很不常用的用户名
       Serial.print("mqtt connected success!");
       client.subscribe(TOPIC);  //接收外来的数据时的intopic
       digitalWrite(LED2, LOW);
