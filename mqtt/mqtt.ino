@@ -1,5 +1,4 @@
 #include <ESP8266WiFi.h>
-
 #include <PubSubClient.h>
 
 int closeAll = 1000;
@@ -10,6 +9,7 @@ const int horse = 1002;
 const int twinkle = 1003;
 int lightMode = normal;
 const int switchModeKey = 1001;
+
 
 const int LED1 = 16;
 const int LED2 = 5;
@@ -26,7 +26,8 @@ const char* password = "abcd35873";         //连接的路由器的密码
 const char* mqtt_server = "192.168.2.192";  //服务器的地址
 const int port = 1883;              
 
-const char* TOPIC = "/led/light";
+const char* TOPIC = "/8266/publish";
+const char* publish_topic = "/led/recv";
 const char* mqtt_id ="jiahao_first_8266";
 const char* mqtt_username ="zjh";
 const char* mqtt_password ="Jjhjjh35873@";
@@ -64,14 +65,13 @@ void callback(char* topic, byte* payload, unsigned int length) {  //用于接收
   int l = 0;
 
   int p = 1;
-
+ 
   for (int i = length - 1; i >= 0; i--) {
 
     l += (int)((char)payload[i] - '0') * p;
 
     p *= 10;
   }
-
   Serial.println("received -> ");
   Serial.println(l);
   controlLights(l);
@@ -106,16 +106,10 @@ void controlLights(int l) {
   for (int i = 0; i < lightsLength; i++) {
 
     if (l == lights[i]) {
-      Serial.print("open gpio");
-      Serial.print(l);
-      Serial.print(" light");
       digitalWrite(lights[i], LOW);
     }
 
     if (l - closeNum == lights[i]) {
-      Serial.print("close gpio");
-      Serial.print(l - closeNum);
-      Serial.print(" light");
       digitalWrite(lights[i], HIGH);
     }
   }
@@ -195,14 +189,10 @@ void ledTwinkleLoop() {
 }
 
 void setup() {  //初始化程序，只运行一遍
-
   setupLight();
   Serial.begin(9600);  //设置串口波特率（与烧写用波特率不是一个概念）
-
   setup_wifi();  //自动连WIFI接入网络
-
   client.setServer(mqtt_server, port);  //端口号
-
   client.setCallback(callback);  //用于接收服务器接收的数据
 }
 
@@ -215,4 +205,13 @@ void loop() {  //主循环
   if (lightMode == twinkle) {
     ledTwinkleLoop();
   }
+}
+char* appendChar(char* prefix, char suffix){
+ 
+  char* dest;
+  dest = new char[strlen(prefix)+2]; //因为加了一个字符，还要有一个结束符
+  strcpy(dest,prefix);
+  dest[strlen(prefix)] = suffix;
+  dest[strlen(prefix)+1] = 0;
+  return dest;
 }
